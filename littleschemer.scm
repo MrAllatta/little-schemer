@@ -310,7 +310,18 @@
        (my-+ (occur* a (car l))
              (occur* a (cdr l)))))))
 
+(define subst*
+  (lambda (new old l)
+    (cond
+      ((null? l) '())
+      ((atom? (car l))
+       (cond
+         ((eqan? (car l) old) (cons new (subst* new old (cdr l))))
+         (else (cons (car l) (subst* new old (cdr l))))))
+      (else (cons (subst* new old (car l)) (subst* new old (cdr l)))))))
 
+(check-equal? (subst* 'dog 'cat '(the (((cat))) in the hat)) '(the (((dog))) in the hat))
+(check-equal? (subst* 'c 'a '(a (ab a) (((b dog cat))))) '(c (ab c) (((b dog cat)))))
 
 #|
 ;; Tests ;;

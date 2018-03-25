@@ -239,11 +239,58 @@
                                     (all-nums (cdr lat))))
          (else (all-nums (cdr lat))))))))
 
-(check-equal? (all-nums '(a 5 b 6 c 7)) '(5 6 7))
-(check-equal? (all-nums '(77 77 dog cat 53)) '(77 77 53))
+(define eqan?
+  (lambda (n m)
+    (cond
+      ((and (number? n)
+            (number? m)) (is-eq? n m))
+      ((or (number? n)
+           (number? m)) #f)
+      (else (eq? n m)))))
+
+(define occur
+  (lambda (a lat)
+    (cond
+      ((null? lat) 0)
+      (else
+       (cond
+         ((eqan? (car lat) a) (add1 (occur a (cdr lat))))
+         (else (occur a (cdr lat))))))))
+
+(define one?
+  (lambda (n)
+    (cond
+      ((zero? (sub1 n)) #t)
+      (else #f))))
+
+(define alt-rempick
+  (lambda (n lat)
+    (cond
+      ((one? n) (cdr lat))
+      (else (cons (car lat)
+                  (alt-rempick (sub1 n)
+                               (cdr lat)))))))
+
+
 
 #|
 ;; Tests ;;
+
+(check-equal? (alt-rempick 1 '(a b c d)) '(b c d))
+(check-equal? (alt-rempick 2 '(cat dog fish)) '(cat fish))
+
+(check-equal? (one? 1) #t)
+(check-equal? (one? 2) #f)
+(check-equal? (one? (add1 0)) #t)
+(check-equal? (one? (sub1 1)) #f)
+(check-equal? (occur 'a '(a b c a)) 2)
+(check-equal? (occur 'a '(bear dog cat)) 0)
+(check-equal? (occur 'dog '(bear dog dog dog)) 3)
+(check-equal? (eqan? 'a 5) #f)
+(check-equal? (eqan? 5 5) #t)
+(check-equal? (eqan? 'a 'a) #t)
+(check-equal? (all-nums '(a 5 b 6 c 7)) '(5 6 7))
+(check-equal? (all-nums '(77 77 dog cat 53)) '(77 77 53))
 (check-equal? (no-nums '(5 a 6 b 7 c)) '(a b c))
 (check-equal? (no-nums '(a 5 b 6 c)) '(a b c))
 (check-equal? (rempick 3 '(a b c d e)) '(a b d e))

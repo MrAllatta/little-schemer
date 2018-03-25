@@ -271,14 +271,70 @@
                   (alt-rempick (sub1 n)
                                (cdr lat)))))))
 
+(define rember*
+  (lambda (a l)
+    (cond
+      ((null? l) '())
+      ((atom? (car l))
+       (cond
+         ((eqan? (car l) a) (rember* a (cdr l)))
+         (else (cons (car l) (rember* a (cdr l))))))
+      (else (cons (rember* a (car l)) (rember* a (cdr l)))))))
+
+; insertR* : New Old List -> List
+(define insertR*
+  (lambda (new old l)
+    (cond
+      ((null? l) '())
+      ((atom? (car l))
+       (cond
+         ((eqan? (car l) old)
+          (cons old
+                (cons new
+                      (insertR* new old (cdr l)))))
+         (else (cons (car l)
+                     (insertR* new old (cdr l))))))
+      (else
+       (cons (insertR* new old (car l))
+             (insertR* new old (cdr l)))))))
+
+(define occur*
+  (lambda (a l)
+    (cond
+      ((null? l) 0)
+      ((atom? (car l))
+       (cond
+         ((eqan? (car l) a) (add1 (occur* a (cdr l))))
+         (else (occur* a (cdr l)))))
+      (else
+       (my-+ (occur* a (car l))
+             (occur* a (cdr l)))))))
+
 
 
 #|
 ;; Tests ;;
+(check-equal? (occur* 'a '(a b (a b) ((a a)) a)) 5)
+(check-equal? (occur* 'dog '(cat dog (((((cat))))))) 1)
+(check-equal? (insertR* 'a 'b '(c b (c d b) b c)) '(c b a (c d b a) b a c))
+(check-equal? (insertR* 'roast 'chuck
+                        '((how much (wood))
+                               could
+                               ((a (wood) chuck))
+                               (((chuck)))
+                               (if (a) ((wood chuck)))
+                               could chuck wood))
+              '((how much (wood))
+                could
+                ((a (wood) chuck roast))
+                (((chuck roast)))
+                (if (a) ((wood chuck roast)))
+                could chuck roast wood))
 
+(check-equal? (rember* 'cat '((dog cat) cat (dog cat cat))) '((dog) (dog)))
+(check-equal? (rember* 'a '(a b a b a b a)) '(b b b))
 (check-equal? (alt-rempick 1 '(a b c d)) '(b c d))
 (check-equal? (alt-rempick 2 '(cat dog fish)) '(cat fish))
-
 (check-equal? (one? 1) #t)
 (check-equal? (one? 2) #f)
 (check-equal? (one? (add1 0)) #t)

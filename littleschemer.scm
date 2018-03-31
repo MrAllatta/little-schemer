@@ -37,12 +37,10 @@
   (lambda (a lat)
     (cond
       ((null? lat) '())
-      (else
-       (cond
-         ((eq? a (car lat)) (cdr lat))
-         (else (cons (car lat)
-                     (rember a
-                             (cdr lat)))))))))
+      ((equal? a (car lat)) (cdr lat))
+      (else (cons (car lat)
+                  (rember a
+                          (cdr lat)))))))
 
 (define firsts
   (lambda (lol)
@@ -320,11 +318,107 @@
          (else (cons (car l) (subst* new old (cdr l))))))
       (else (cons (subst* new old (car l)) (subst* new old (cdr l)))))))
 
-(check-equal? (subst* 'dog 'cat '(the (((cat))) in the hat)) '(the (((dog))) in the hat))
-(check-equal? (subst* 'c 'a '(a (ab a) (((b dog cat))))) '(c (ab c) (((b dog cat)))))
+(define insertL*
+  (lambda (new old l)
+    (cond
+      ((null? l) '())
+      ((atom? (car l))
+       (cond
+         ((eqan? (car l) old)
+          (cons new
+                (cons (car l)
+                      (insertL* new old (cdr l)))))
+         (else (cons (car l)
+                     (insertL* new old (cdr l))))))
+      (else (cons (insertL* new old (car l))
+                  (insertL* new old (cdr l)))))))
+
+(define member*
+  (lambda (a l)
+    (cond
+      ((null? l) #f)
+      ((atom? (car l))
+       (cond
+         ((eqan? a (car l)) #t)
+         (else (member* a (cdr l)))))
+      (else (or (member* a (car l))
+                (member* a (cdr l)))))))
+
+(define leftmost
+  (lambda (l)
+    (cond
+      ((atom? (car l)) (car l))
+      (else (leftmost (car l))))))
+
+(define eqlist?
+  (lambda (l1 l2)
+    (cond
+      ((and (null? l1) (null? l2)) #t)
+      ((or (null? l1) (null? l2)) #f)
+      (else (and (equal? (car l1) (car l2))
+                 (eqlist? (cdr l1 (cdr l2))))))))
+  
+(define equal?
+  (lambda (s1 s2)
+    (cond
+      ((and (atom? s1) (atom? s2))
+       (eqan? s1 s2))
+      ((or (atom? s1) (atom? s2))
+       #f)
+      (else (eqlist? s1 s2)))))
+
+(define numbered?
+  (lambda (aexp)
+    (cond
+      ((atom? aexp) (number? aexp))
+      (else (and (numbered? (car aexp))
+                 (numbered? (car (cdr (cdr aexp)))))))))
+
+(define value
+  (lambda (nexp)
+    (cond
+      ((atom? nexp) nexp)
+      ((eq? (car (cdr nexp)) '+) (+ (value (car nexp))
+                                    (value (car (cdr (cdr nexp))))))
+      ((eq? (car (cdr nexp)) '*) (* (value (car nexp))
+                                    (value (car (cdr (cdr nexp))))))
+      (else (pwr (value (car nexp))
+                 (value (car (cdr (cdr nexp)))))))))
+
+(check-equal? (value 13) 13)
+(check-equal? (value '(1 + 3)) 4)
+(check-equal? (value '(1 + (3 pwr 4))) 82)
 
 #|
 ;; Tests ;;
+(check-equal? (numbered? '(3 + (4 * 5))) #t)
+(let ((n 2))
+  (check-equal? (numbered? (cons n '(+ 3))) #t))
+(check-equal? (numbered? '3) #t)
+(check-equal? (numbered? '(sausage + 3)) #f)
+
+(let ((l1 '(strawberry ice cream))
+      (l2 '(srawberry cream ice)))
+  (check-equal? (eqlist? l1 l2) #f))
+(let ((l1 '(banana ((split))))
+      (l2 '((banana) (split))))
+  (check-equal? (eqlist? l1 l2) #f))
+(let ((l1 '(beef ((sausage)) (and (soda))))
+      (l2 '(beef ((salami)) (and (soda)))))
+  (check-equal? (eqlist? l1 l2) #f))
+(let ((l1 '(a b c))
+      (l2 '(a b c)))
+  (check-equal? (eqlist? l1 l2) #t))
+
+(check-equal? (leftmost '(a b c)) 'a)
+(check-equal? (leftmost '((a) b c)) 'a)
+(check-equal? (leftmost '(((b)))) 'b)
+
+(check-equal? (member* 'a '(b b ((b a)))) #t)
+
+(check-equal? (insertL* 'b 'a '(a (c a) d b a)) '(b a (c b a) d b b a))
+(check-equal? (subst* 'dog 'cat '(the (((cat))) in the hat)) '(the (((dog))) in the hat))
+(check-equal? (subst* 'c 'a '(a (ab a) (((b dog cat))))) '(c (ab c) (((b dog cat)))))
 (check-equal? (occur* 'a '(a b (a b) ((a a)) a)) 5)
 (check-equal? (occur* 'dog '(cat dog (((((cat))))))) 1)
 (check-equal? (insertR* 'a 'b '(c b (c d b) b c)) '(c b a (c d b a) b a c))
